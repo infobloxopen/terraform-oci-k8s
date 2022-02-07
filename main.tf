@@ -21,7 +21,7 @@ data "http" "workstation-external-ip" {
 
 locals {
   count                     = var.enable_oracle ? 1 : 0
-  workstation-external-cidr = "${chomp(data.http.workstation-external-ip.0.body)}/32"
+  workstation-external-cidr = var.enable_oracle ? "${chomp(data.http.workstation-external-ip.0.body)}/32" : null
 }
 
 /**
@@ -318,13 +318,22 @@ resource "oci_containerengine_cluster" "oke" {
 resource "oci_containerengine_node_pool" "oke_node_pool" {
   count = var.enable_oracle ? 1 : 0
 
-  cluster_id         = oci_containerengine_cluster.oke.0.id
-  compartment_id     = var.oci_tenancy_ocid
-  kubernetes_version = data.oci_containerengine_cluster_option.cluster_option[count.index].kubernetes_versions[length(data.oci_containerengine_cluster_option.cluster_option[count.index].kubernetes_versions) - 1]
-  name               = var.oci_node_pool_name
-  node_image_name    = var.oci_node_pool_node_image_name
-  node_shape         = var.oci_node_pool_node_shape
-  subnet_ids         = oci_core_subnet.oke-subnet-worker[*].id
+  cluster_id          = oci_containerengine_cluster.oke.0.id
+  compartment_id      = var.oci_tenancy_ocid
+  kubernetes_version  = data.oci_containerengine_cluster_option.cluster_option[count.index].kubernetes_versions[length(data.oci_containerengine_cluster_option.cluster_option[count.index].kubernetes_versions) - 1]
+  name                = var.oci_node_pool_name
+  /*
+  node_source_details = {
+    #Required
+    image_id = oci_core_image.test_image.id
+    source_type = var.node_pool_node_source_details_source_type
+
+    #Optional
+    boot_volume_size_in_gbs = var.node_pool_node_source_details_boot_volume_size_in_gbs
+  }
+  */
+  node_shape          = var.oci_node_pool_node_shape
+  subnet_ids          = oci_core_subnet.oke-subnet-worker[*].id
 
   #Optional
   #node_image_name = "${var.node_pool_node_image_name}"
